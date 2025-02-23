@@ -2,3 +2,31 @@
 
 - Source code for our sports prediction web app
 - View the project at [URL]
+
+### Git Setup:
+---
+ `git clone [url]`
+ `cd uiuc_sas/frontend`
+ `npm install`
+
+### Git Workflow:
+---
+`git switch main`
+`git pull origin main`
+`git switch -c [branch name]`
+`git branch //Check that you aren't working in main`
+
+*Make your changes*
+
+`git add .`
+`git commit -m "Commit message here"`
+`git push origin [branch name]`
+
+Then we review the changes that were made, and merge the branches
+
+### Frontend Setup:
+---
+`npm install` 
+- Only needs to be run once, to install your React dependencies
+`npm run dev`
+- Hosts the project on `localhost:5173`
