@@ -1,24 +1,32 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Node.js dependencies (frontend)
+frontend/node_modules/
+frontend/.env
 
-node_modules
-dist
-dist-ssr
-*.local
+# React build artifacts
+frontend/build/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Python dependencies (backend)
+backend/venv/
+backend/.env
+
+# Flask application cache files
+backend/__pycache__
+
+# OS-specific files (macOS, Windows)
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.swp
+
+# Optional: Ignore all .env files
+.env
+
+# Optional: Ignore package lock files if you want to manage dependencies manually
+frontend/package-lock.json
+backend/requirements.txt
+
+# Ignore other IDE and editor-specific files
+.vscode/
+.idea/
