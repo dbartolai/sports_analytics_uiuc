@@ -19,7 +19,7 @@
 
 `git switch -c [branch name]`
 
-`git branch //Check that you aren't working in main`
+`git branch` *You should see an asterisk next to your new branch name*
 
 *Make your changes*
 
