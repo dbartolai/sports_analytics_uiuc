@@ -15,6 +15,10 @@ def hello_world():
 def goodbye_world():
     return 'Goodbye World!'
 
+@app.route('/amelia')
+def amelia():
+    return 'Amelia'
+
 if __name__ == '__main__':
     app.run(debug=True)
 
