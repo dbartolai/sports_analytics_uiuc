@@ -5,7 +5,7 @@
 
 ### Git Setup:
 ---
- `git clone [url]`
+ `git clone [url]` *Reach out if you don't know how to find the URL*
 
  `cd uiuc_sas/frontend`
 
@@ -35,6 +35,8 @@
 ---
 `npm install` 
 - Only needs to be run once, to install your React dependencies
+- Make sure you are in the `uiuc_sas/frontend` directory when you run this
 
 `npm run dev`
 - Hosts the project on `localhost:5173`
+- Copy that URL into any browser to access the site
