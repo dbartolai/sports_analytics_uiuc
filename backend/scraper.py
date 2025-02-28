@@ -2,6 +2,7 @@ import numpy as np
 import kagglehub 
 import sqlite3 as sq
 from flask import Flask, jsonify
+from numpy import random as r
 
 ### FIND ALL OF THE GAMES BY A CERTAIN TEAM IN THE REGULAR SEASON, AND USE THAT TO DETERMINE PLAYOFF PERFORMANCE
 ### USE REGULAR SEASON GAMES UP TO A SPECIFIC POINT TO DETERMINE ANY REGULAR SEASON GAME AT SAID POINT
@@ -15,7 +16,7 @@ def max_game_id(cursor, year):
     statement = f'SELECT game_id FROM game WHERE game_id Like \'002{year}%\' ORDER BY game_id DESC'
     cursor.execute(statement)
     max_game_id = cursor.fetchone()
-    return(max_game_id)
+    return(max_game_id)[0]
 
 def min_game_id(year):
     return(f'002{year%100}00030')
@@ -34,8 +35,11 @@ def get_results_by_game_id(cursor, game_id):
     cursor.execute(statement)
     # result = [game_id, home, home score, away score, away]
     game_info = cursor.fetchone()
-    result = [game_info[0], game_info[1], game_info[2], game_info[5], game_info[6]]
-    return result
+    try:
+        result = [game_info[0], game_info[1], game_info[2], game_info[5], game_info[6]]
+        return result
+    except:
+        pass
 
 def get_stats_by_game_id_home(cursor, game_id):
     statement = f'SELECT game_id, fgm_home, fga_home, fg3m_home, fg3a_home, ftm_home, fta_home, oreb_home, dreb_home, ast_home, stl_home, blk_home, tov_home, pf_home FROM game WHERE game_id = \'{game_id}\''
@@ -201,8 +205,8 @@ def update_stats_dict(cursor, stats, records, game_id):
     home_stats = stats[home_team]
     away_stats = stats[away_team]
 
-    home_stats *= home_games_played
-    away_stats *= away_games_played
+    home_stats = np.multiply(home_stats, home_games_played)
+    away_stats = np.multiply(away_stats, away_games_played)
 
     home_stats += get_stats_by_game_id_home(cursor, game_id)[1:14]
     away_stats += get_stats_by_game_id_away(cursor, game_id)[1:14]
@@ -224,47 +228,49 @@ def f(X, W, b):
 #Execute gradient descent algorithm given clean data
 def J(X, Y, W, m, b):
     J = 0
-    for _ in range(m):
-        J += (Y - f(X, W, b))*(Y - f(X, W, b))
+    for i in range(m-30):
+        J += (Y[i] - f(X[i], W, b))*(Y[i] - f(X[i], W, b))
     return J/(2*m)
 
 def dJ_dw(X, Y, W, m, b):
     dJ_dw = np.zeros(32)
-    for _ in range(m):
-        dJ_dw += (f(X, W, b) - Y)*X
+    for i in range(m-30):
+        dJ_dw += np.multiply(X[i], (f(X[i], W, b) - Y[i]))
     return np.divide(dJ_dw, m)
 
 def dJ_db(X, Y, W, m, b):
-    dJ_dw = np.zeros(32)
-    for _ in range(m):
-        dJ_dw += (f(X, W, b) - Y)
-    return np.divide(dJ_dw, m)
+    dJ_db = 0
+    for i in range(m-30):
+        dJ_db += (f(X[i], W, b) - Y[i])
+    return dJ_db/m
 
+N = 10000
 def gradient_descent(X, Y, W, b, m):
 
     alpha = 0.1
-    for _ in range(100):
+    J_prev = 0
+    for i in range(N):
         _J = J(X, Y, W, m, b)
+        if abs(_J-J_prev) < 0.002: break
+        if i%1000 == 0: print('Iteration: ', i, "; Cost: ",_J, "; Weights: ", W)
         _dJ_dw = dJ_dw(X, Y, W, m, b)
         _dJ_db = dJ_db(X, Y, W, m, b)
         W -= alpha * _dJ_dw
         b -= alpha * _dJ_db
 
-    return W
+    return W, b
 
 def find_coefficients_by_year(cursor, year):
 
-    # DEFINE MODEL PARAMS
-    X = []
-
     # HOME SCORE
-    W = np.ones(32)
-    b = 0
+    X = []
+    W = np.add(r.rand(32)*0.005, 0.02)
+    b = 50
     Y = []
 
     #AWAY SCORE
-    V = np.ones(32)
-    a = 0
+    V = W.copy()
+    a = 50
     Z = []
 
     max_id = max_game_id(cursor, year)
@@ -285,13 +291,16 @@ def find_coefficients_by_year(cursor, year):
 
     for team in get_team_names_by_year(cursor, year):
         stats[team] = np.zeros(13)
-        records[team] = np.zeros(5)
+        records[team] = np.zeros(4)
 
 
     # PLACES DATA INTO NICE TABLES
-    for game_id_int in range(int(first_id), int(max_id)):
-        game_id = str(game_id_int)
+    for game_id_int in range(int(first_id), int(max_id)+1):
+        game_id = '00' + str(game_id_int)
         results = get_results_by_game_id(cursor, game_id) 
+        if results == None:
+            m-= 1
+            continue
         home_team = results[1]                
         away_team = results[4]
         if game_id <= min_id:
@@ -309,20 +318,32 @@ def find_coefficients_by_year(cursor, year):
             update_record_dict(cursor, records, game_id)
 
 
-    return [gradient_descent(X, Y, W, b, m), gradient_descent(X, Z, V, b, m)]
+    return gradient_descent(X, Y, W, b, m), gradient_descent(X, Z, V, a, m)
 
 
-def model(cursor):
+def model(cursor, start_year, end_year):
     home_weights = np.zeros(32)
+    home_int = 0
     away_weights = np.zeros(32)
-    for year in range(2015, 2023):
-        year_home_weights, year_away_weights =  find_coefficients_by_year(cursor, year)
+    away_int = 0
+    num_years = 0
+    for year in range(start_year, end_year):
+        print(year, 'Training Begins')
+        num_years += 1
+        [year_home_weights, year_home_intercept], [year_away_weights, year_away_intercept] =  find_coefficients_by_year(cursor, year)
         home_weights += year_home_weights
+        home_int += year_home_intercept
         away_weights += year_away_weights
-    np.divide(home_weights, 7)
-    np.divide(away_weights, 7)
-    return [home_weights, away_weights]
+        away_int += year_away_intercept
+        print(year, 'Training Complete')
+    home_weights = np.divide(home_weights, num_years)
+    home_int /= num_years
+    away_weights = np.divide(away_weights, num_years)
+    away_int /= num_years
+    return home_weights, home_int, away_weights, away_int
 
+
+params = {}
 def main():
 
     try: 
@@ -336,7 +357,17 @@ def main():
         result = cursor.fetchall()
         print('SQLite version: ', result)
 
-        model(cursor)
+        print()
+
+        output = model(cursor, 2015, 2023)
+
+        params['W'] = output[0]
+        params['b'] = output[1]
+        params['V'] = output[2]
+        params['a'] = output[3]
+
+        print(params)
+
 
         cursor.close()
 
@@ -347,6 +378,8 @@ def main():
         if connection:
             connection.close()
             print('Connection closed')
+
+        return output
 
 
 
