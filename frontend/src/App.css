@@ -33,3 +33,16 @@
   margin-left:60px;
 }
 
+@media (prefers-color-scheme: light) {
+  .header {
+    padding-left:40px;
+    padding-right:20px;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    background-color: #ececec;
+    position: sticky; 
+    top:0;
+  }
+}

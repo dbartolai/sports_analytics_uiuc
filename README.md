@@ -42,8 +42,8 @@
 
 ### Backend Setup:
 ---
-- NoSQL style database hosted on Amazon DynamoDB
-- Flask for setting up an API (https://flask.palletsprojects.com/en/stable/)
+- NoSQL style database hosted on Amazon ([DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/getting-started-step-1.html))
+- Flask for setting up an API ([Docs](https://flask.palletsprojects.com/en/stable/))
 
 `python3 app.py` *Make sure you are in backend directory*
 - Runs backend on the URL found in console
