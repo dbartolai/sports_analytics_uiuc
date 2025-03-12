@@ -145,7 +145,7 @@ for team in team_stats:
     team_stats[team] = np.concatenate((stats[0:3], normalized_stats))    
 
 
-def projections(W, b, V, a):
+def projections(W, V, b, a):
 
     home_symbol = input('Home Team: ')
     away_symbol = input('Away Team: ')
@@ -174,3 +174,4 @@ def projections(W, b, V, a):
 
 
 
+projections(HOME_WEIGHTS, AWAY_WEIGHTS, home_int, away_int)

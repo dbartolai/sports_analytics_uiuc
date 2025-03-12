@@ -265,12 +265,12 @@ def find_coefficients_by_year(cursor, year):
     # HOME SCORE
     X = []
     W = np.add(r.rand(32)*0.005, 0.02)
-    b = 50
+    b = 100
     Y = []
 
     #AWAY SCORE
     V = W.copy()
-    a = 50
+    a = 100
     Z = []
 
     max_id = max_game_id(cursor, year)
