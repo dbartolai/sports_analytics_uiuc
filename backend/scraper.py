@@ -384,3 +384,12 @@ def main():
 
 
 main()
+
+
+# Break season up into games for training and games for testing (80/20 split)
+# Engineer efficiency metrics
+# Weight last 5/10 games more heavily
+# Variable reduction: Fouls, Blocks
+    # Stepwise Reduction
+# Implement Marginal Stats
+# Cross Validation
