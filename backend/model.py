@@ -2,27 +2,19 @@ import numpy as np
 from bs4 import BeautifulSoup
 import html5lib as html
 import requests
+import json
+from backend.train import *
+
+file = open("weights.json", "r")
+data = json.load(file)
+
+HOME_WEIGHTS = data['W']
+AWAY_WEIGHTS = data['V']
+HOME_INT = data['b']
+AWAY_INT = data['a']
 
 
-HOME_WEIGHTS = [5.02124053, 16.443735, 10.91904736, 6.84824854, -7.78700208,
-                1.85553683, 8.87307, 10.82672048, -12.95541701, 0.25751445,
-                9.30917861, -3.65228687, 6.07029598, -0.90557146, -3.00940943,
-                -2.84785016, -2.57784933, 3.4773734, 5.71445029, 4.88303566,
-                -2.74230958, 1.19965877, -2.52196451, -2.600907, -3.18872132,
-                5.05401038, 4.94615396, 8.98158206, -4.33296655, -7.89830281,
-                8.29333624, 18.09517489]
 
-home_int = 41.22868055278398
-
-AWAY_WEIGHTS = [-5.92427756, 15.59732819, 29.99447984, -8.4000316, 3.3449414,
-                11.14903387, -2.13582992, 4.23396469, -13.72169587, 1.57406808,
-                5.36276819, -8.08246285, 3.95021134, 1.58638282, 1.5644094,
-                -3.27819463, 3.31969929, 3.97400136, -9.18664699, 9.04737326,
-                -2.67852692, 5.65223411, -9.29964311, 5.16713317, 3.98777983,
-                0.63129273, 2.15202934, 3.10300919, -3.6420731, -0.60719005,
-                13.94517924, 6.16162146]
-
-away_int = 36.677876138936625
 
 url = 'https://www.basketball-reference.com/leagues/NBA_2025.html#per_game-team'
 r = requests.get(url)
@@ -174,4 +166,4 @@ def projections(W, V, b, a):
 
 
 
-projections(HOME_WEIGHTS, AWAY_WEIGHTS, home_int, away_int)
+projections(HOME_WEIGHTS, AWAY_WEIGHTS, HOME_INT, AWAY_INT)

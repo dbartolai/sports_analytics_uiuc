@@ -1,11 +1,13 @@
 import numpy as np
-import kagglehub 
 import sqlite3 as sq
 from flask import Flask, jsonify
 from numpy import random as r
+import json
+from queue import Queue
 
 ### FIND ALL OF THE GAMES BY A CERTAIN TEAM IN THE REGULAR SEASON, AND USE THAT TO DETERMINE PLAYOFF PERFORMANCE
 ### USE REGULAR SEASON GAMES UP TO A SPECIFIC POINT TO DETERMINE ANY REGULAR SEASON GAME AT SAID POINT
+### THIS DOCUMENT USES EFFICIENCY AND ADVANCED STATS INSTEAD OF BOX SCORE STATS
 
 def max_game_id(cursor, year):
     year = year%100
@@ -107,289 +109,259 @@ def get_team_stats_regular_season(cursor, team, year):
     return stats
 
 
-def average_stats_by_year(cursor, year):
-    teams = get_team_names_by_year(cursor, year)
-    average_stats_by_team = []
-    for team in teams:
-        team_stats = np.array(get_team_stats_regular_season(cursor, team, year)) # fgm, fga, 3pm, 3pa, ftm, fta, oreb, dreb, ast, stl, blk, tov, pf 
-        team_stats = np.delete(team_stats, 0, axis=1)
-        team_stats = team_stats.astype(float)
-        team_stats = team_stats.astype(int)
-        mean_team_stats = np.average(team_stats, axis=0)
-        average_stats_by_team.append(mean_team_stats)
-    league_averages = np.average(average_stats_by_team, axis=0)
-    return league_averages
 
-def range_of_stats_by_year(cursor, year):
-    teams = get_team_names_by_year(cursor, year)
-    team_maxima = []
-    team_minima = []
-    for team in teams:
-        team_stats = np.delete(np.array(get_team_stats_regular_season(cursor, team, year)), 0, axis=1).astype(float)
-        team_stats = team_stats.astype(int)
-        team_maxima.append(np.max(team_stats, axis=0))
-        team_minima.append(np.min(team_stats, axis=0))
-    maxima = np.max(team_maxima, axis=0)
-    minima = np.max(team_minima, axis=0)
-    range = np.subtract(maxima, minima)
-    return range
+def estimate_possessions(FGA, FTA, TO, OREB):
+
+    # Posessions = FGA + 0.44 * FTA + TO - OREB
+
+    return FGA + 0.44*FTA + TO - OREB
 
 
+def ratings(PFOR, PALLOWED, POSS):
+
+    ORTG = PFOR/POSS
+    DRTG = PALLOWED/POSS
+    NET = ORTG - DRTG
+
+    return [ORTG, DRTG, NET]
 
 
-def compile_and_scale_features(cursor, year, game_id, ranges, averages, stats, records):
-    results = get_results_by_game_id(cursor, game_id) 
-    home_team = results[1]                
-    away_team = results[4]
+def adjusted_ratings(ORTG, OpponentORTG, DRTG, OpponentDRTG):
+    AdjORTG = ORTG - OpponentDRTG
+    AdjDRTG = DRTG - OpponentORTG
+    return [AdjDRTG, AdjORTG]
 
-    X_1 = records[home_team]
-    home_games = X_1[0] + X_1[1]
-    home_win_pct = np.array([X_1[0]/home_games])
-    home_ppg_for_adjusted = np.array([X_1[2]/100])
-    home_ppg_against_adjusted = np.array([X_1[3]/100])
-    X_2 = stats[home_team]
-    X_2_norm = np.subtract(X_2, averages)
-    X_2_norm = np.divide(X_2_norm, ranges)
-    X_2_norm += 0.5
-    X_3 = stats[away_team]
-    X_3_norm = np.subtract(X_3, averages)
-    X_3_norm = np.divide(X_3_norm, ranges)
-    X_3_norm += 0.5
-    X_4 = records[away_team]
-    away_games = X_4[0] + X_4[1]
-    away_win_pct = np.array([X_4[0]/away_games])
-    away_ppg_for_adjusted = np.array([X_4[2]/100])
-    away_ppg_against_adjusted = np.array([X_4[3]/100])
-    return np.concatenate([home_win_pct, home_ppg_for_adjusted, home_ppg_against_adjusted, 
-                           X_2_norm,
-                           X_3_norm,
-                           away_win_pct, away_ppg_for_adjusted, away_ppg_against_adjusted]) #LENGTH = 32
+def efficiency(POSS, GP, PTS, OREB, DREB, OpponentOREB, OpponentDREB, TO, AST, FGA, FTA, ThreePM, FGM):
 
+    # Pace = Possessions / Games Played
+    Pace = POSS/GP
+    # True Shooting = Points / [ 2 * (FGA + 0.44 * FTA) ]
+    TS = PTS / (2 * (FGA + 0.44*FTA))
+    # Effective FG% = (FGM + 0.5 * 3PM) / FGA
+    eFG = (FGM + 0.5* ThreePM)/FGA
+    # OREB% = OREB / [OREB + opponent DREB]
+    OREBpct = OREB / (OREB + OpponentDREB)
+    DREBpct = DREB / (DREB + OpponentOREB)
+    # TOV% = TOV / POSS
+    TOpct = TO / POSS
+    # Assist to Turnover Ratio = AST / TOV
+    ATR = AST / TO
 
+    return [Pace/100, TS, eFG, OREBpct, DREBpct, TOpct, ATR]
+def new_compile_and_scale_features(cursor, game_id, records):
 
+    results = get_results_by_game_id(cursor, game_id)
 
+    update_record_dict(cursor, records, game_id)
+
+    # Find home and away box scores from the game
+    # fgm, fga, fg3m, fg3a, ftm, fta, oreb, dreb, ast, stl, blk, tov, pf
+    home_stats = get_stats_by_game_id_home(cursor, game_id)[1:14]
+    away_stats = get_stats_by_game_id_away(cursor, game_id)[1:14]
+
+    # Posessions
+    home_posessions = estimate_possessions(home_stats[1], home_stats[5], home_stats[11], home_stats[6]) 
+    away_posessions = estimate_possessions(away_stats[1], away_stats[5], away_stats[11], away_stats[6]) 
+
+    # [ORTG, DRTG, NET]
+    home_ratings = ratings(results[2], results[3], home_posessions)
+    away_ratings = ratings(results[3], results[2], away_posessions)
+
+    # AdjustedORTG, AdjustedDRTG
+    home_adjusted_ratings = adjusted_ratings(home_ratings[0], away_ratings[0], home_ratings[1], away_ratings[1])
+    home_NET = home_adjusted_ratings[0] - home_adjusted_ratings[1]
+    away_adjusted_ratings = adjusted_ratings(away_ratings[0], home_ratings[0], away_ratings[1], home_ratings[1])
+    away_NET = away_adjusted_ratings[0] - away_adjusted_ratings[1]
+
+    #length: 7
+    home_efficiency = efficiency(home_posessions, 1, results[2], home_stats[6], home_stats[7], away_stats[6], away_stats[7], home_stats[11], home_stats[8], home_stats[1], home_stats[5], home_stats[2], home_stats[0])
+    away_efficiency = efficiency(away_posessions, 1, results[3], away_stats[6], away_stats[7], home_stats[6], home_stats[7], away_stats[11], away_stats[8], away_stats[1], away_stats[5], away_stats[2], away_stats[0])
+
+    # X_i = [win_pct, ppg, ppga, ratings, efficiency] for home and away
+    # Y_i = points scored for home and away
+
+    return np.concatenate(([home_NET], home_efficiency, [away_NET], away_efficiency))
 def update_record_dict(cursor, records, game_id):
-    results = get_results_by_game_id(cursor, game_id) # [game_id, home, home score, away score, away]
-    home_team = results[1]                
+    results = get_results_by_game_id(cursor, game_id)
+    home_team = results[1]
     away_team = results[4]
 
-    home_total_pts_for = (records[home_team][2])*(records[home_team][0] + records[home_team][1])
-    records[home_team][2] = (home_total_pts_for + results[2])/(records[home_team][0] + records[home_team][1] + 1)
+    home_pts = results[2]
+    away_pts = results[3]
 
-    home_total_pts_against = (records[home_team][3])*(records[home_team][0] + records[home_team][1])
-    records[home_team][3] = (home_total_pts_against + results[3])/(records[home_team][0] + records[home_team][1] + 1)
+    home_win = False
 
-    away_total_pts_for = (records[away_team][2])*(records[away_team][0] + records[away_team][1])
-    records[away_team][2] = (away_total_pts_for + results[3])/(records[away_team][0] + records[away_team][1] + 1)
+    if home_pts > away_pts: 
+        home_win = True
 
-    away_total_pts_against = (records[away_team][3])*(records[away_team][0] + records[away_team][1])
-    records[away_team][3] = (away_total_pts_against + results[2])/(records[away_team][0] + records[away_team][1] + 1)
-    if results[2] > results[3]:
-        records[home_team][0]+=1
-        records[away_team][1]+=1
+    if records[home_team].full():
+        records[home_team].get()
+
+    if records[away_team].full():
+        records[away_team].get()
+    
+    if home_win:
+        records[home_team].put(np.array([1, 0, home_pts, away_pts]))
+        records[away_team].put(np.array([0, 1, away_pts, home_pts]))
     else:
-        records[home_team][1]+=1
-        records[away_team][0]+=1
+        records[home_team].put(np.array([0, 1, home_pts, away_pts]))
+        records[away_team].put(np.array([1, 0, away_pts, home_pts]))
 
-def games_played(records, team):
-    return records[team][1] + records[team][2]
 
-def update_stats_dict(cursor, stats, records, game_id):
+def update_stats_dict(cursor, stats, game_id, records):
     results = get_results_by_game_id(cursor, game_id) 
     home_team = results[1]                
     away_team = results[4]
 
-    home_games_played = games_played(records, home_team)
-    away_games_played = games_played(records, away_team)
+    game_stats = new_compile_and_scale_features(cursor, game_id, records)
 
-    home_stats = stats[home_team]
-    away_stats = stats[away_team]
+    if stats[home_team].full():
+        stats[home_team].get()
+        
+    stats[home_team].put(game_stats[0:8])
 
-    home_stats = np.multiply(home_stats, home_games_played)
-    away_stats = np.multiply(away_stats, away_games_played)
+    if stats[away_team].full():
+        stats[away_team].get()
 
-    home_stats += get_stats_by_game_id_home(cursor, game_id)[1:14]
-    away_stats += get_stats_by_game_id_away(cursor, game_id)[1:14]
-
-    home_stats /= (home_games_played + 1)
-    away_stats /= (away_games_played + 1)
+    stats[away_team].put(game_stats[8:16])
 
 
 
+def rolling_averages(stats, records, home, away):
 
 
-#PREDICTS THE Y VALUE (home pts, away pts)
-def f(X, W, b): 
-    output = np.dot(X, W)
-    return output + b
-
-
-
-#Execute gradient descent algorithm given clean data
-def J(X, Y, W, m, b):
-    J = 0
-    for i in range(m-30):
-        J += (Y[i] - f(X[i], W, b))*(Y[i] - f(X[i], W, b))
-    return J/(2*m)
-
-def dJ_dw(X, Y, W, m, b):
-    dJ_dw = np.zeros(32)
-    for i in range(m-30):
-        dJ_dw += np.multiply(X[i], (f(X[i], W, b) - Y[i]))
-    return np.divide(dJ_dw, m)
-
-def dJ_db(X, Y, W, m, b):
-    dJ_db = 0
-    for i in range(m-30):
-        dJ_db += (f(X[i], W, b) - Y[i])
-    return dJ_db/m
-
-N = 10000
-def gradient_descent(X, Y, W, b, m):
-
-    alpha = 0.1
-    J_prev = 0
-    for i in range(N):
-        _J = J(X, Y, W, m, b)
-        if abs(_J-J_prev) < 0.002: break
-        if i%1000 == 0: print('Iteration: ', i, "; Cost: ",_J, "; Weights: ", W)
-        _dJ_dw = dJ_dw(X, Y, W, m, b)
-        _dJ_db = dJ_db(X, Y, W, m, b)
-        W -= alpha * _dJ_dw
-        b -= alpha * _dJ_db
-
-    return W, b
-
-def find_coefficients_by_year(cursor, year):
-
-    # HOME SCORE
-    X = []
-    W = np.add(r.rand(32)*0.005, 0.02)
-    b = 100
-    Y = []
-
-    #AWAY SCORE
-    V = W.copy()
-    a = 100
-    Z = []
-
-    max_id = max_game_id(cursor, year)
-    min_id = min_game_id(year)
-    first_id = first_game_id(year)
+    home_temp = Queue(maxsize=15)
+    home_games_checked = 0
+    home_rolling_average_stats = np.zeros(8)
     
-    m = int(max_id)-int(first_id)
+    while not stats[home].empty():
+        home_stats = stats[home].get()
+        home_stats_np = np.array(home_stats) 
+        if home_games_checked < 5:
+            for _ in range(3): home_rolling_average_stats = np.add(home_rolling_average_stats, home_stats_np)
+            home_games_checked+= 1
+        elif home_games_checked < 10:
+            for _ in range(2): home_rolling_average_stats = np.add(home_rolling_average_stats, home_stats_np)
+            home_games_checked+= 1
+        else:    
+            home_rolling_average = np.add(home_rolling_average_stats, home_stats_np)
+            home_games_checked+= 1
+        
+        home_temp.put(home_stats)
 
-    averages = average_stats_by_year(cursor, year)
-    ranges = range_of_stats_by_year(cursor, year)
+    stats[home] = home_temp
+    weighted_games_checked = 0
+    for i in range(home_games_checked):
+        if i < 5:
+            weighted_games_checked += 3
+        elif i < 10:
+            weighted_games_checked += 2
+        else :
+            weighted_games_checked += 1
+    if weighted_games_checked > 0: home_rolling_average_stats = np.divide(home_rolling_average_stats, weighted_games_checked)
+    else: home_rolling_average_stats = np.zeros(8)
 
-    # IDEA: MAKE MORE EFFICIENT BY STORING EACH TEAM'S MOST
-    # RECENT AVERAGE STATS AND NUMBER OF GAMES PLAYED IN A TABLE. THIS WAY
-    # WE DON"T ITERATE THROUGH HUNDREDS OF GAMES FOR EACH GAME.
+    away_temp = Queue(maxsize=15)
+    away_games_checked = 0
+    away_rolling_average_stats = np.zeros(8)
+    
+    while not stats[away].empty():
+        away_stats = stats[away].get()
+        away_stats_np = np.array(away_stats) 
+        if away_games_checked < 5:
+            for _ in range(3): away_rolling_average_stats = np.add(away_rolling_average_stats, away_stats_np)
+            away_games_checked += 1
+        elif away_games_checked < 10:
+            for _ in range(2): away_rolling_average_stats = np.add(away_rolling_average_stats, away_stats_np)
+            away_games_checked += 1
+        else:    
+            away_rolling_average = np.add(away_rolling_average_stats, away_stats_np)
+            away_games_checked += 1
+        
+        away_temp.put(away_stats)
 
-    stats = {} # {team : stats}
-    records = {} # {team : [W, L, PPGf, PPGa]}
-
-    for team in get_team_names_by_year(cursor, year):
-        stats[team] = np.zeros(13)
-        records[team] = np.zeros(4)
-
-
-    # PLACES DATA INTO NICE TABLES
-    for game_id_int in range(int(first_id), int(max_id)+1):
-        game_id = '00' + str(game_id_int)
-        results = get_results_by_game_id(cursor, game_id) 
-        if results == None:
-            m-= 1
-            continue
-        home_team = results[1]                
-        away_team = results[4]
-        if game_id <= min_id:
-            update_record_dict(cursor, records, game_id)
-            home_stats = get_stats_by_game_id_home(cursor, game_id)[1:14]
-            away_stats = get_stats_by_game_id_away(cursor, game_id)[1:14]
-            stats[home_team] = home_stats
-            stats[away_team] = away_stats
+    stats[away] = away_temp
+    weighted_games_checked = 0
+    for i in range(away_games_checked):
+        if i < 5:
+            weighted_games_checked += 3
+        elif i < 10:
+            weighted_games_checked += 2
         else:
-            X.append(compile_and_scale_features(cursor, year, game_id, ranges, averages, stats, records)) #LENGTH = 32
-            results = get_results_by_game_id(cursor, game_id)
-            Y.append(results[2]) # HOME SCORE
-            Z.append(results[3]) # AWAY SCORE
-            update_stats_dict(cursor, stats, records, game_id)
-            update_record_dict(cursor, records, game_id)
+            weighted_games_checked += 1
+    if weighted_games_checked > 0: away_rolling_average_stats = np.divide(away_rolling_average_stats, weighted_games_checked)
+    else: away_rolling_average_stats = np.zeros(8)
+
+    home_temp = Queue(maxsize=15)
+    home_games_checked = 0
+    home_rolling_average = np.zeros(4)
+    
+    while not records[home].empty():
+        home_record = records[home].get()
+        home_record_np = np.array(home_record) 
+        if home_games_checked < 5:
+            for _ in range(3): home_rolling_average = np.add(home_rolling_average, home_record_np)
+            home_games_checked += 1
+        elif home_games_checked < 10:
+            for _ in range(2): home_rolling_average = np.add(home_rolling_average, home_record_np)
+            home_games_checked += 1
+        else:    
+            home_rolling_average = np.add(home_rolling_average, home_record_np)
+            home_games_checked += 1
+        
+        home_temp.put(home_record)
+
+    records[home] = home_temp
+    weighted_games_checked = 0
+    for i in range(home_games_checked):
+        if i < 5:
+            weighted_games_checked += 3
+        elif i < 10:
+            weighted_games_checked += 2
+        else:
+            weighted_games_checked += 1
+    if weighted_games_checked > 0: home_rolling_average = np.divide(home_rolling_average, weighted_games_checked)
+    else: home_rolling_average = np.zeros(4)
 
 
-    return gradient_descent(X, Y, W, b, m), gradient_descent(X, Z, V, a, m)
+    away_temp = Queue(maxsize=15)
+    away_games_checked = 0
+    away_rolling_average = np.zeros(4)
+    
+    while not records[away].empty():
+        away_record = records[away].get()
+        away_record_np = np.array(away_record) 
+        if away_games_checked < 5:
+            for _ in range(3): away_rolling_average = np.add(away_rolling_average, away_record_np)
+            away_games_checked += 1
+        elif away_games_checked < 10:
+            for _ in range(2): away_rolling_average = np.add(away_rolling_average, away_record_np)
+            away_games_checked += 1
+        else:    
+            away_rolling_average = np.add(away_rolling_average, away_record_np)
+            away_games_checked += 1
+        
+        away_temp.put(away_record)
 
+    records[away] = away_temp
+    weighted_games_checked = 0
+    for i in range(away_games_checked):
+        if i < 5:
+            weighted_games_checked += 3
+        elif i < 10:
+            weighted_games_checked += 2
+        else:
+            weighted_games_checked += 1
+    if weighted_games_checked > 0: away_rolling_average = np.divide(away_rolling_average, weighted_games_checked)
+    else: away_rolling_average = np.zeros(4)
+    
+    
+    if (home_rolling_average[0] + home_rolling_average[1]) > 0: home_win_pct = home_rolling_average[0] / (home_rolling_average[0] + home_rolling_average[1])
+    else: home_win_pct = 0
+    if (away_rolling_average[0] + away_rolling_average[1]) > 0: away_win_pct = away_rolling_average[0] / (away_rolling_average[0] + away_rolling_average[1])
+    else: away_win_pct = 0
 
-def model(cursor, start_year, end_year):
-    home_weights = np.zeros(32)
-    home_int = 0
-    away_weights = np.zeros(32)
-    away_int = 0
-    num_years = 0
-    for year in range(start_year, end_year):
-        print(year, 'Training Begins')
-        num_years += 1
-        [year_home_weights, year_home_intercept], [year_away_weights, year_away_intercept] =  find_coefficients_by_year(cursor, year)
-        home_weights += year_home_weights
-        home_int += year_home_intercept
-        away_weights += year_away_weights
-        away_int += year_away_intercept
-        print(year, 'Training Complete')
-    home_weights = np.divide(home_weights, num_years)
-    home_int /= num_years
-    away_weights = np.divide(away_weights, num_years)
-    away_int /= num_years
-    return home_weights, home_int, away_weights, away_int
+    return np.concatenate(([home_win_pct], [home_rolling_average[2]/200], [home_rolling_average[3]/200], 
+                          home_rolling_average_stats, away_rolling_average_stats,
+                          [away_win_pct], [away_rolling_average[2]/200], [away_rolling_average[3]/200]))
 
-
-params = {}
-def main():
-
-    try: 
-
-        connection = sq.connect('nba.sqlite')
-        cursor = connection.cursor()
-        print('Database connection initiated')
-
-        query = 'select sqlite_version();'
-        cursor.execute(query)
-        result = cursor.fetchall()
-        print('SQLite version: ', result)
-
-        print()
-
-        output = model(cursor, 2015, 2023)
-
-        params['W'] = output[0]
-        params['b'] = output[1]
-        params['V'] = output[2]
-        params['a'] = output[3]
-
-        print(params)
-
-
-        cursor.close()
-
-    except sq.Error as error:
-        print('Error occurred', error)
-
-    finally:
-        if connection:
-            connection.close()
-            print('Connection closed')
-
-        return output
-
-
-
-main()
-
-
-# Break season up into games for training and games for testing (80/20 split)
-# Engineer efficiency metrics
-# Weight last 5/10 games more heavily
-# Variable reduction: Fouls, Blocks
-    # Stepwise Reduction
-# Implement Marginal Stats
-# Cross Validation

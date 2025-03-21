@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #1a1c24;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -37,19 +37,3 @@ h1 {
 
 
 
-/*Light mode adjustments*/
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ececec;
-  }
-  a {
-    color:#676eff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}

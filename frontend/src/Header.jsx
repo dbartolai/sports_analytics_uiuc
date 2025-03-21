@@ -1,19 +1,12 @@
 import './App.css'
 
-function Header() {
+function Header({date}) {
     return (
         <>
             <div className='header'>
                 <h1 className='title'> LowStakes</h1>
-                <div class='hotbar'>
-                    {/* Add hotbar links in here */}
-                    <a className='hotbar-link'>Link</a>
-                    <a className='hotbar-link'>Link</a>
-                    <a className='hotbar-link'>Link</a>
-                    <a className='hotbar-link'>Link</a>
-                    <a className='hotbar-link'>Link</a>
-                    <a className='hotbar-link'>Link</a>
-
+                <div className='hotbar'>
+                    <h3>{date}</h3>
                 </div>
             </div>
         </>
