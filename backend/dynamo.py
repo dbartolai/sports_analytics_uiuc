@@ -1,18 +1,11 @@
 import boto3
 import logging
 from botocore.exceptions import ClientError
+import json
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
-dynamodb = boto3.resource("dynamodb", region_name="us-east-2")
-
-try:
-    tables = list(dynamodb.tables.all())
-    print("Connected to DynamoDB. Tables found:", [table.name for table in tables])
-except Exception as e:
-    print("Error connecting to DynamoDB:", str(e))
 
 
 class Weights:
@@ -24,7 +17,7 @@ class Weights:
     def create_table(self, table_name):
         try:
             self.table = self.dyn_resource.create_table(
-                Table_Name = table_name,
+                TableName = table_name,
                 KeySchema = [
                     {"AttributeName": "element", "KeyType": "HASH"}
                 ],
@@ -44,13 +37,16 @@ class Weights:
             raise
         else:
             return self.table
+        
+    def use_table(self, table_name):
+        self.table = self.dyn_resource.Table(table_name)
 
 
     def add_weights(self, key, info):
         try:
             self.table.put_item(
                 Item={
-                    "Element" : key,
+                    "element" : key,
                     "Info" : info
                 }
             )
@@ -64,7 +60,7 @@ class Weights:
             )
             raise
 
-    def get_weights(self, key):
+    def get_data(self, key):
         try: response = self.table.get_item(Key={"element" : key})
         except ClientError as e:
             logger.error(
@@ -75,7 +71,7 @@ class Weights:
                 e.response["Error"]["Message"],
             )
             raise
-        else: return response["Info"]
+        else: return response["Item"]["Info"]
 
     def update_weights(self, key, info):
         try:
@@ -96,3 +92,55 @@ class Weights:
             raise
         else: return response["Attributes"]
 
+    def delete_weights(self):
+        try:
+            self.table.delete()
+            self.table = None
+        except ClientError as e:
+            logger.error(
+                "Couldn't delete the table. Here's why: %s: %s",
+                e.response["Error"]["Code"],
+                e.response["Error"]["Message"],
+            )
+            raise
+
+def weight_data():
+    file = open('weights.json')
+    return json.load(file)
+    
+def delete_table():
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-2")
+    weights = Weights(dynamodb)
+    weights.use_table("Weights")
+    weights.delete_weights()
+
+
+
+def reset_table():
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-2")
+    weights = Weights(dynamodb)
+    weights.create_table("Weights")
+
+    data = weight_data()
+    print(data)
+
+    weights.add_weights('W', data['W'])
+    weights.add_weights('b', data['b'])
+    weights.add_weights('V', data['V'])
+    weights.add_weights('a', data['a'])
+
+def get_weights():
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-2")
+    weights = Weights(dynamodb)
+    weights.use_table('Weights')
+
+    data = {}
+
+    data['W'] = weights.get_data('W')
+    data['b'] = weights.get_data('b')
+    data['V'] = weights.get_data('V')
+    data['a'] = weights.get_data('a')
+
+    return data
+
+print(get_weights())

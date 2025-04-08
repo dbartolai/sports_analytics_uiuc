@@ -148,6 +148,8 @@ def efficiency(POSS, GP, PTS, OREB, DREB, OpponentOREB, OpponentDREB, TO, AST, F
     ATR = AST / TO
 
     return [Pace/100, TS, eFG, OREBpct, DREBpct, TOpct, ATR]
+
+
 def new_compile_and_scale_features(cursor, game_id, records):
 
     results = get_results_by_game_id(cursor, game_id)
@@ -181,6 +183,8 @@ def new_compile_and_scale_features(cursor, game_id, records):
     # Y_i = points scored for home and away
 
     return np.concatenate(([home_NET], home_efficiency, [away_NET], away_efficiency))
+
+
 def update_record_dict(cursor, records, game_id):
     results = get_results_by_game_id(cursor, game_id)
     home_team = results[1]

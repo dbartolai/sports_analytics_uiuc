@@ -20,7 +20,6 @@ function App() {
     <>
       <Header date = {date}/>
       <div className='app'>
-        <Scoreboard/>
       </div>
     </>
   )

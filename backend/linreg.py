@@ -96,7 +96,7 @@ def expected_val_spread(X, W, b, Y, V, a, Z, m, spreads):
         if bet_home and real_margin < sportsbook_spread:
             EV += 1.909
 
-        elif not bet_home and real_margin - sportsbook_spread:
+        elif not bet_home and real_margin > sportsbook_spread:
             EV += 1.909
 
         

@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import html5lib as html
 import requests
 import json
-from backend.train import *
+from backend.linreg import *
 
 file = open("weights.json", "r")
 data = json.load(file)
