@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import dev
+from sqlalchemy import create_engine
 
 app = FastAPI(title="Sports Analytics API")
 
@@ -9,6 +10,7 @@ app = FastAPI(title="Sports Analytics API")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL, echo=True)
 
 
 # Configure CORS
