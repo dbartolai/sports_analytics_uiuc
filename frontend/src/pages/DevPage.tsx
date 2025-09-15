@@ -45,8 +45,8 @@ export default function DevPage() {
   return (
     <div className="dev-page">
       <h1>UIUC SAS Dev Team!</h1>
-      
-      {editing ? (
+      <div className="dev-page-info">
+        {editing ? (
         <DevEdit 
           dev={editing} 
           onUpdated={handleUpdated} 
@@ -68,6 +68,8 @@ export default function DevPage() {
           onEdit={setEditing} 
         />
       )}
+      </div>
+      
     </div>
   );
 }

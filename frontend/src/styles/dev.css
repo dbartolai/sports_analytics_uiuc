@@ -5,7 +5,6 @@
   min-height: 100vh;
   width: 100vw; /* Ensure full width usage */
   background-color: #fcfcfc;
-  display: flex;
 }
 
 .dev-page h1 {
@@ -42,7 +41,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  width: 100%; /* Ensure form takes full container width */
+  width: 80%; /* Ensure form takes full container width */
 }
 
 .form-group {
@@ -157,7 +156,7 @@
   border: 1px solid #e9ecef;
   margin: 0 auto; /* Center the list container */
   max-width: 900px; /* Give list more width than form */
-  width: 100%;
+  width: 80%;
 }
 
 .dev-list-title {
