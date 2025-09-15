@@ -14,25 +14,25 @@ dev_models.Base.metadata.create_all(bind=engine)
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+print(f"🚀 Environment: {ENVIRONMENT}")
+print(f"🌐 Frontend URL: {FRONTEND_URL}")
 
-# Configure CORS
-if ENVIRONMENT == "development":
-    origins = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:4173",
-    ]
-else:
-    origins = [
-        "https://sports-analytics-uiuc.vercel.app",  # Your actual Vercel URL
-        FRONTEND_URL,
-    ]
+# More permissive CORS configuration for debugging
+origins = [
+    "https://sports-analytics-uiuc.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "*"  # Temporarily allow all origins for debugging
+]
+
+print(f"🔒 CORS origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Temporarily allow all origins
+    allow_credentials=False,  # Set to False when using allow_origins=["*"]
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -42,7 +42,7 @@ app.include_router(dev.router, prefix="/devs", tags=["devs"])
 
 @app.get("/")
 async def root():
-    return {"message": "Sports Analytics API"}
+    return {"message": "Sports Analytics API", "environment": ENVIRONMENT}
 
 @app.get("/health")
 async def health():
@@ -53,3 +53,12 @@ async def health():
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return {"status": "unhealthy", "database": "error", "message": str(e)}
+
+@app.get("/cors-test")
+async def cors_test():
+    return {
+        "message": "CORS test endpoint",
+        "environment": ENVIRONMENT,
+        "frontend_url": FRONTEND_URL,
+        "origins": origins
+    }
