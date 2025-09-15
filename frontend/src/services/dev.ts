@@ -7,8 +7,8 @@ console.log('API_URL configured as:', API_URL);
 
 export async function listDevs(): Promise<Dev[]> {
   try {
-    console.log('Fetching from:', `${API_URL}devs`);
-    const res = await fetch(`${API_URL}devs`);
+    console.log('Fetching from:', `${API_URL}devs/`);
+    const res = await fetch(`${API_URL}devs/`);
     
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -23,8 +23,8 @@ export async function listDevs(): Promise<Dev[]> {
 
 export async function createDev(data: DevCreate): Promise<Dev> {
   try {
-    console.log('Creating dev at:', `${API_URL}devs`, 'with data:', data);
-    const res = await fetch(`${API_URL}devs`, {  // Removed trailing slash
+    console.log('Creating dev at:', `${API_URL}devs/`, 'with data:', data);
+    const res = await fetch(`${API_URL}devs/`, {  // Removed trailing slash
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
