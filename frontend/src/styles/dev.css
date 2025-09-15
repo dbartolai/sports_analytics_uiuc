@@ -7,6 +7,10 @@
   background-color: #fcfcfc;
 }
 
+.dev-page-info{
+    display: flex;
+}
+
 .dev-page h1 {
   color: #2c3e50;
   text-align: center;
