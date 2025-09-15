@@ -291,7 +291,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .dev-page {
     padding: 1rem;
   }
@@ -299,7 +299,7 @@
   .dev-form-container,
   .dev-list-container {
     padding: 1.5rem;
-    max-width: 100%; /* Full width on mobile */
+    max-width: 100%; /* Full width on mobile 
   }
   
   .form-actions {
@@ -317,7 +317,7 @@
   .dev-page h1 {
     font-size: 2rem;
   }
-}
+} */
 
 /* Form Error and Success States */
 .form-error {
