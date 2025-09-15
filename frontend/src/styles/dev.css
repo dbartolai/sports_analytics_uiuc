@@ -46,7 +46,7 @@
   flex-direction: column;
   gap: 1.5rem;
   height: 100%;
-  width: 80%; /* Ensure form takes full container width */
+  width: 600px; /* Ensure form takes full container width */
 }
 
 .form-group {
