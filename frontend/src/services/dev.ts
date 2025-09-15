@@ -8,7 +8,7 @@ export async function listDevs(): Promise<Dev[]> {
 }
 
 export async function createDev(data: DevCreate): Promise<Dev> {
-  const res = await fetch(`${API_URL}/devs/`, {
+  const res = await fetch(`${API_URL}devs/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -17,7 +17,7 @@ export async function createDev(data: DevCreate): Promise<Dev> {
 }
 
 export async function updateDev(id: number, data: DevUpdate): Promise<Dev> {
-  const res = await fetch(`${API_URL}/devs/${id}`, {
+  const res = await fetch(`${API_URL}devs/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
