@@ -44,7 +44,7 @@ export default function DevPage() {
 
   return (
     <div className="dev-page">
-      <h1>Meet out Devs</h1>
+      <h1>UIUC SAS Dev Team!</h1>
       
       {editing ? (
         <DevEdit 
