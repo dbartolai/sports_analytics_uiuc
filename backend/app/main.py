@@ -2,15 +2,17 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import dev
-from sqlalchemy import create_engine
+from .db import engine
+from .models import dev as dev_models
 
 app = FastAPI(title="Sports Analytics API")
+
+# Create database tables on startup
+dev_models.Base.metadata.create_all(bind=engine)
 
 # Get environment variables
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL, echo=True)
 
 
 # Configure CORS
@@ -44,4 +46,10 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    try:
+        from .db import engine
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "error", "message": str(e)}
