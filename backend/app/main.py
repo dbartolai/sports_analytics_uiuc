@@ -8,6 +8,8 @@ app = FastAPI(title="Sports Analytics API")
 # Get environment variables
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 # Configure CORS
 if ENVIRONMENT == "development":
