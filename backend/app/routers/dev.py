@@ -4,7 +4,7 @@ from app.db import get_db
 from app.models.dev import Dev
 from app.schemas.dev import DevCreate, DevOut, DevUpdate
 
-router = APIRouter(prefix="/devs", tags=["devs"])
+router = APIRouter(tags=["devs"])
 
 @router.post("/", response_model=DevOut)
 def create_dev(payload: DevCreate, db: Session = Depends(get_db)):
