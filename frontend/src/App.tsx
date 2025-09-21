@@ -1,11 +1,11 @@
-import DevPage from "./pages/DevPage"
+import Showcase from "./pages/Showcase"
 
 
 function App() {
 
   return (
     <>
-    <DevPage/>
+    <Showcase/>
     </>
   )
 }
