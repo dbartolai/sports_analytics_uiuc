@@ -1,5 +1,7 @@
 import DrakeCard from "../components/DrakeCard"
 import RyanCard from "../components/RyanCard"
+import ShravanCard from "../components/ShravanCard"
+import NewCard from "../components/NewCard"
 
 function Showcase () {
     return (
@@ -8,6 +10,9 @@ function Showcase () {
         
             <DrakeCard/>
             <RyanCard/>
+            <ShravanCard/>
+            <NewCard/>
+            <p>Updates</p>
         </div>
     )
 } 
