@@ -1,5 +1,6 @@
 import DrakeCard from "../components/DrakeCard"
 import RyanCard from "../components/RyanCard"
+import RoshanCard from "../components/RoshanCard"
 import ShravanCard from "../components/ShravanCard"
 import NewCard from "../components/NewCard"
 
@@ -10,6 +11,7 @@ function Showcase () {
         
             <DrakeCard/>
             <RyanCard/>
+            <RoshanCard/>
             <ShravanCard/>
             <NewCard/>
             <p>Updates</p>
