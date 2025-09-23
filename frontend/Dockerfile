@@ -8,7 +8,9 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve with Nginx
-FROM nginx:alpine
+FROM nginx:1.28.1-alpine
+
+RUN apk update && apk upgrade
 
 # Copy built files to nginx html folder
 COPY --from=build /app/dist /usr/share/nginx/html
