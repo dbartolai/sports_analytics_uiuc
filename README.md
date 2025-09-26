@@ -8,3 +8,6 @@
 - Built in [FastAPI](https://fastapi.tiangolo.com/)
 - Hosted on [Railway](https://railway.app/)
 
+## Local Dev Build Command:
+- `docker-compose up --build`
+- `ctrl + C` to quit
