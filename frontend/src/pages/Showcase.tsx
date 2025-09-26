@@ -3,6 +3,8 @@ import RyanCard from "../components/RyanCard"
 import RoshanCard from "../components/RoshanCard"
 import ShravanCard from "../components/ShravanCard"
 import NewCard from "../components/NewCard"
+import AaryanCard from "../components/AaryanCard"
+import DevCard from "../components/DevCard"
 
 function Showcase () {
     return (
@@ -13,7 +15,9 @@ function Showcase () {
             <RyanCard/>
             <RoshanCard/>
             <ShravanCard/>
-            <NewCard/>
+            <AaryanCard />
+            <DevCard />
+            <NewCard />
             <p>Updates</p>
         </div>
     )
