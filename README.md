@@ -9,5 +9,5 @@
 - Hosted on [Railway](https://railway.app/)
 
 ## Local Dev Build Command:
-- `docker-compose up --build`
+- `docker-compose up --build` (IF THIS DOESN'T WORK, TRY `docker compose up --build`)
 - `ctrl + C` to quit
