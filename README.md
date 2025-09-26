@@ -11,3 +11,11 @@
 ## Local Dev Build Command:
 - `docker-compose up --build`
 - `ctrl + C` to quit
+
+## Git Workflow:
+- Push things to YOUR OWN BRANCH
+- `git checkout -b <branchname>`
+- Make changes
+- `git add .`
+- `git commit -m <commit message>`
+- `git push origin main`
