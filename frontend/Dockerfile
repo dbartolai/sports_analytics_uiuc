@@ -8,7 +8,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve with Nginx
-FROM nginx:1.28.1-alpine
+FROM nginx:alpine
 
 RUN apk update && apk upgrade
 
