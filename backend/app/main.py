@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .db import engine
+from . import db
 from .auth import routes as auth_routes
 
 app = FastAPI(title="Sports Analytics API")
@@ -36,6 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+db.create_tables()
+
 # Include routers
 app.include_router(auth_routes.router, tags=["auth"])
 
@@ -48,7 +50,8 @@ async def health():
     try:
         from .db import engine
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            from sqlalchemy import text
+            conn.execute(text("SELECT 1"))
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return {"status": "unhealthy", "database": "error", "message": str(e)}
