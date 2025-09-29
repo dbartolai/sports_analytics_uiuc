@@ -5,11 +5,12 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from . import utils, models
 from .models import User  # Create a User model
+from .schemas import UserCreate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register")
-def register(user: models.UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, db: Session = Depends(get_db)):
     # Check if user exists in database
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
