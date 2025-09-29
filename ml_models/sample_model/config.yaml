@@ -1,0 +1,3 @@
+// Centralize your hyperparameters and necessary filepaths
+// Record features and training data as well
+// Keep all paths to most recent artifacts, etc. in this file

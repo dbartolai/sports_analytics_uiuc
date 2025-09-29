@@ -1,0 +1,9 @@
+// List of required dependencies necessary to run the model code
+
+// i.e. 
+
+pandas
+scikit-learn
+pyyaml
+joblib
+numpy

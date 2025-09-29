@@ -1,21 +1,19 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import dev
 from .db import engine
-from .models import dev as dev_models
+from .auth import routes as auth_routes
 
 app = FastAPI(title="Sports Analytics API")
 
 # Create database tables on startup
-dev_models.Base.metadata.create_all(bind=engine)
 
 # Get environment variables
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-print(f"🚀 Environment: {ENVIRONMENT}")
-print(f"🌐 Frontend URL: {FRONTEND_URL}")
+print(f" Environment: {ENVIRONMENT}")
+print(f" Frontend URL: {FRONTEND_URL}")
 
 # More permissive CORS configuration for debugging
 origins = [
@@ -38,7 +36,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(dev.router, prefix="/devs", tags=["devs"])
+app.include_router(auth_routes.router, tags=["auth"])
 
 @app.get("/")
 async def root():

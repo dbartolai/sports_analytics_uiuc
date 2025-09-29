@@ -1,5 +1,7 @@
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
 SQLAlchemy==2.0.35
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 fastapi[all]
+python-jose
+passlib
