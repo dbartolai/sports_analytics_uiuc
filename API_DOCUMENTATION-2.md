@@ -14,6 +14,7 @@ text
 Retrieves raw betting history data for a specific user.
 
 **Example Response:**
+```json
 [
 {
 "bet_id": 123,
@@ -26,7 +27,7 @@ Retrieves raw betting history data for a specific user.
 "timestamp": "2025-10-10T14:30:00Z"
 }
 ]
-
+```
 text
 
 ---
@@ -42,6 +43,7 @@ text
 Fetches real-time sportsbook data from multiple betting platforms.
 
 **Example Response:**
+```json
 {
 "timestamp": "2025-10-10T15:45:00Z",
 "books": [
@@ -77,7 +79,7 @@ Fetches real-time sportsbook data from multiple betting platforms.
 }
 ]
 }
-
+```
 text
 
 ---
@@ -95,24 +97,27 @@ text
 Registers a new user by email and password.
 
 **Request Body:**
+```json
 {
 "email": "user@example.com",
 "password": "securePassword123"
 }
-
+```
 text
 **Success Response:**
+```json
 {
 "msg": "User registered successfully",
 "user_id": 1
 }
-
+```
 text
 **Error Response (400):**
+```json
 {
 "detail": "Email already registered"
 }
-
+```
 text
 
 ### 2. Logging in a User
@@ -124,17 +129,20 @@ text
 Logs in user.
 
 **Success Response (200 OK):**
+```json
 {
 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
 "token_type": "bearer"
 }
-
+```
 text
 **Error Response (401 Unauthorized):**
+```json
+
 {
 "detail" : "Invalid email or password"
 }
-
+```
 text
 
 ---
@@ -153,13 +161,14 @@ text
 Retrieves saved settings for the specified user.
 
 **Example Response:**
+```json
 {
 "user_id": "abc123",
 "theme": "dark",
 "notifications": true,
 "dashboard_layout": "compact"
 }
-
+```
 text
 
 ### 2. Update User Settings
@@ -171,20 +180,25 @@ text
 Updates the user's settings.
 
 **Request Body:**
+```json
 {
 "user_id": "abc123",
 "theme": "light",
 "notifications": false,
 "dashboard_layout": "expanded"
 }
-
+```
 text
 **Success Response:**
+```json
 { "msg": "Settings updated successfully" }
+```
 
 text
 **Error Response (400):**
+```json
 { "detail": "Invalid settings data" }
+```
 
 text
 
@@ -204,6 +218,7 @@ text
 Returns profile information for the specified user.
 
 **Example Response:**
+```json
 {
 "user_id": "abc123",
 "email": "user@example.com",
@@ -211,6 +226,7 @@ Returns profile information for the specified user.
 "join_date": "2024-05-15T12:00:00Z",
 "avatar_url": "https://domain.com/img/avatar.png"
 }
+```
 
 text
 
@@ -223,20 +239,24 @@ text
 Updates information in the user's profile.
 
 **Request Body:**
+```json
 {
 "user_id": "abc123",
 "display_name": "User456",
 "avatar_url": "https://domain.com/img/avatar456.png"
 }
+```
 
 text
 **Success Response:**
+```json
 { "msg": "Profile updated successfully" }
-
+```
 text
 **Error Response (400):**
+```json
 { "detail": "Invalid profile update data" }
-
+```
 text
 
 ---
@@ -255,6 +275,7 @@ text
 Returns summary statistics and overview data for the user's dashboard.
 
 **Example Response:**
+```json
 {
 "user_id": "abc123",
 "total_bets": 120,
@@ -267,6 +288,7 @@ Returns summary statistics and overview data for the user's dashboard.
 { "bet_id": 124, "result": "L", "wager": 30, "payout": 0 }
 ]
 }
+```
 
 text
 
@@ -279,6 +301,7 @@ text
 Returns data formatted for dashboard charts (e.g., cumulative net profit, bet frequency over time).
 
 **Example Response:**
+```json
 {
 "profit_over_time": [
 { "date": "2025-10-01", "profit": 25 },
@@ -289,7 +312,7 @@ Returns data formatted for dashboard charts (e.g., cumulative net profit, bet fr
 "NBA": 40,
 }
 }
-
+```
 text
 
 ---
