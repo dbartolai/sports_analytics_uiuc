@@ -287,7 +287,6 @@ Returns data formatted for dashboard charts (e.g., cumulative net profit, bet fr
 "bets_by_sport": {
 "NFL": 60,
 "NBA": 40,
-"NHL": 20
 }
 }
 
