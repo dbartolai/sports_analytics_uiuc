@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from . import db
 from .auth import routes as auth_routes
+from .settings import routes as settings_routes
+from .profile import routes as profile_routes
 
 app = FastAPI(title="Sports Analytics API")
 
@@ -40,6 +42,8 @@ db.create_tables()
 
 # Include routers
 app.include_router(auth_routes.router, tags=["auth"])
+app.include_router(settings_routes.router, tags=["settings"])
+app.include_router(profile_routes.router, tags=["profile"])
 
 @app.get("/")
 async def root():
